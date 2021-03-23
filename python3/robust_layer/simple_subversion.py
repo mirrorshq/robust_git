@@ -24,6 +24,7 @@
 
 
 import os
+import re
 import time
 import subprocess
 from ._util import Util
@@ -74,6 +75,9 @@ def update(dest_directory, recheckout_on_failure=False, url=None, quiet=False):
         if not os.path.isdir(os.path.join(dest_directory, ".svn")):
             mode = "checkout"
             break
+        if url != _svnGetUrl(dest_directory):
+            mode = "checkout"
+            break
         break
 
     while True:
@@ -101,3 +105,9 @@ def update(dest_directory, recheckout_on_failure=False, url=None, quiet=False):
                 time.sleep(1.0)
         else:
             assert False
+
+
+def _svnGetUrl(dirName):
+    ret = Util.cmdCall("/usr/bin/svn", "info", dirName)
+    m = re.search("^URL: (.*)$", ret, re.M)
+    return m.group(1)
