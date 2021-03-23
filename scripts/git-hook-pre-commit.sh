@@ -1,9 +1,9 @@
 #!/bin/bash
 
-FILES="python3/robust_git.py"
+FILES="$(find python3/robust_layer -name '*.py' | tr '\n' ' ')"
 ERRFLAG=0
 
-OUTPUT=`pyflakes "${FILES}" 2>&1`
+OUTPUT=`pyflakes ${FILES} 2>&1`
 if [ -n "$OUTPUT" ] ; then
     echo "pyflake errors:"
     echo "$OUTPUT"
@@ -11,7 +11,7 @@ if [ -n "$OUTPUT" ] ; then
     ERRFLAG=1
 fi
 
-OUTPUT=`pep8 "${FILES}" | grep -v "E501"`
+OUTPUT=`pycodestyle ${FILES} | grep -v "E501"`
 if [ -n "$OUTPUT" ] ; then
     echo "pep8 errors:"
     echo "$OUTPUT"

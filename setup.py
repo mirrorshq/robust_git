@@ -37,16 +37,16 @@ classif = [
 
 # Do setup
 setup(
-    name='robust_git',
+    name='robust_layer',
     version='0.0.1',
-    description='Python library composed of robust git operations',
+    description='Brings more robust operations',
     author='Fpemud',
     author_email='fpemud@sina.com',
     license='GPLv3 License',
     platforms='Linux',
     classifiers=classif,
-    url='http://github.com/fpemud/robust_git',
+    url='http://github.com/mirrorshq/robust_layer',
     download_url='',
-    py_modules=['robust_git'],
+    py_modules=['robust_layer'],
     package_dir={'': 'python3'},
 )

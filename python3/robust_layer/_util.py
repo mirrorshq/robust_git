@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# robust_git.py - robust git operations
+# _util.py - utilities
 #
 # Copyright (c) 2019-2020 Fpemud <fpemud@sina.com>
 #
@@ -22,14 +22,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-"""
-robust_git
-
-@author: Fpemud
-@license: GPLv3 License
-@contact: fpemud@sina.com
-"""
-
 import os
 import sys
 import time
@@ -37,52 +29,12 @@ import shutil
 import selectors
 import subprocess
 
-__author__ = "fpemud@sina.com (Fpemud)"
-__version__ = "0.0.1"
+
+STUCK_TIMEOUT = 60     # unit: second
+RETRY_TIMEOUT = 1      # unit: second
 
 
-def clone(*args):
-    args = list(args)
-    while True:
-        try:
-            _Util.shellExecWithStuckCheck(["/usr/bin/git", "clone"] + args, _Util.getGitSpeedEnv())
-            break
-        except _ProcessStuckError:
-            time.sleep(_RETRY_TIMEOUT)
-        except subprocess.CalledProcessError as e:
-            if e.returncode > 128:
-                # terminated by signal, no retry needed
-                raise
-            time.sleep(_RETRY_TIMEOUT)
-
-
-def pull(*args):
-    args = list(args)
-    assert not any(x not in args for x in ["-r", "--rebase", "--no-rebase"])
-
-    while True:
-        try:
-            _Util.shellExecWithStuckCheck(["/usr/bin/git", "pull", "--rebase"] + args, _Util.getGitSpeedEnv())
-            break
-        except _ProcessStuckError:
-            time.sleep(_RETRY_TIMEOUT)
-        except subprocess.CalledProcessError as e:
-            if e.returncode > 128:
-                # terminated by signal, no retry needed
-                raise
-            time.sleep(_RETRY_TIMEOUT)
-
-
-def clean(dir_name):
-    _Util.cmdCall("/usr/bin/git", "-C", dir_name, "reset", "--hard")  # revert any modifications
-    _Util.cmdCall("/usr/bin/git", "-C", dir_name, "clean", "-xfd")    # delete untracked files
-
-
-_STUCK_TIMEOUT = 60     # unit: second
-_RETRY_TIMEOUT = 1      # unit: second
-
-
-class _ProcessStuckError(Exception):
+class ProcessStuckError(Exception):
 
     def __init__(self, cmd, timeout):
         self.timeout = timeout
@@ -92,14 +44,7 @@ class _ProcessStuckError(Exception):
         return "Command '%s' stucked for %d seconds." % (self.cmd, self.timeout)
 
 
-class _Util:
-
-    @staticmethod
-    def getGitSpeedEnv():
-        return {
-            "GIT_HTTP_LOW_SPEED_LIMIT": "1024",
-            "GIT_HTTP_LOW_SPEED_TIME": "60",
-        }
+class Util:
 
     @staticmethod
     def rmDirContent(dirpath):
@@ -135,16 +80,40 @@ class _Util:
         return ret.stdout.rstrip()
 
     @staticmethod
-    def shellExecWithStuckCheck(cmdList, envDict):
+    def cmdExecWithStuckCheck(cmdList, envDict={}, bQuiet=False):
+        # run the process
+        proc = subprocess.Popen(cmdList, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                universal_newlines=True, env=envDict)
+        Util._communicateWithStuckCheck(proc, bQuiet)
+
+    @staticmethod
+    def shellCall(cmd):
+        # call command with shell to execute backstage job
+        # scenarios are the same as FmUtil.cmdCall
+
+        ret = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                             shell=True, universal_newlines=True)
+        if ret.returncode > 128:
+            # for scenario 1, caller's signal handler has the oppotunity to get executed during sleep
+            time.sleep(1.0)
+        if ret.returncode != 0:
+            print(ret.stdout)
+            ret.check_returncode()
+        return ret.stdout.rstrip()
+
+    @staticmethod
+    def shellExecWithStuckCheck(cmd, envDict={}, bQuiet=False):
+        # run the process
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                shell=True, env=envDict)
+        Util._communicateWithStuckCheck(proc, bQuiet)
+
+    @staticmethod
+    def _communicateWithStuckCheck(proc, bQuiet):
         if hasattr(selectors, 'PollSelector'):
             pselector = selectors.PollSelector
         else:
             pselector = selectors.SelectSelector
-
-        # run the process
-        proc = subprocess.Popen(cmdList,
-                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                universal_newlines=True, env=envDict)
 
         # redirect proc.stdout/proc.stderr to stdout/stderr
         # make CalledProcessError contain stdout/stderr content
@@ -156,10 +125,11 @@ class _Util:
             selector.register(proc.stdout, selectors.EVENT_READ)
             selector.register(proc.stderr, selectors.EVENT_READ)
             while selector.get_map():
-                res = selector.select(_STUCK_TIMEOUT)
+                res = selector.select(STUCK_TIMEOUT)
                 if res == []:
                     bStuck = True
-                    sys.stderr.write("Process stuck for %d second(s), terminated.\n" % (_STUCK_TIMEOUT))
+                    if not bQuiet:
+                        sys.stderr.write("Process stuck for %d second(s), terminated.\n" % (STUCK_TIMEOUT))
                     proc.terminate()
                     break
                 for key, events in res:
@@ -181,6 +151,6 @@ class _Util:
         if proc.returncode > 128:
             time.sleep(1.0)
         if bStuck:
-            raise _ProcessStuckError(proc.args, _STUCK_TIMEOUT)
+            raise ProcessStuckError(proc.args, STUCK_TIMEOUT)
         if proc.returncode:
             raise subprocess.CalledProcessError(proc.returncode, proc.args, sStdout, sStderr)

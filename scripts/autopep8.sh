@@ -1,4 +1,4 @@
 #!/bin/bash
 
-FILES="python3/robust_git.py"
+FILES="$(find python3/robust_layer -name '*.py' | tr '\n' ' ')"
 autopep8 -ia --ignore=E402,E501 ${FILES}
