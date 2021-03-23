@@ -26,7 +26,7 @@
 import os
 import time
 import subprocess
-from ._util import Util
+from ._util import Util, ProcessStuckError
 from .git import additional_environ
 
 
@@ -46,7 +46,7 @@ def clone(dest_directory, url, quiet=False):
             cmd = "/usr/bin/git clone %s \"%s\" \"%s\"" % (quietArg, url, dest_directory)
             Util.shellExecWithStuckCheck(cmd, additional_environ(), quiet)
             break
-        except Util.ProcessStuckError:
+        except ProcessStuckError:
             time.sleep(Util.RETRY_TIMEOUT)
         except subprocess.CalledProcessError as e:
             if e.returncode > 128:
@@ -86,7 +86,7 @@ def pull(dest_directory, reclone_on_failure=False, url=None, quiet=False):
                 cmd = "/usr/bin/git -C \"%s\" pull --rebase --no-stat %s" % (dest_directory, quietArg)
                 Util.shellExecWithStuckCheck(cmd, additional_environ(), quiet)
                 break
-            except Util.ProcessStuckError:
+            except ProcessStuckError:
                 time.sleep(1.0)
             except subprocess.CalledProcessError as e:
                 if e.returncode > 128:

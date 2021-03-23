@@ -25,7 +25,7 @@
 
 import time
 import subprocess
-from ._util import Util, STUCK_TIMEOUT
+from ._util import Util, STUCK_TIMEOUT, ProcessStuckError
 
 
 def additional_environ():
@@ -40,7 +40,7 @@ def clone(*args):
         try:
             Util.cmdExecWithStuckCheck(["/usr/bin/git", "clone"] + list(args), additional_environ())
             break
-        except Util.ProcessStuckError:
+        except ProcessStuckError:
             time.sleep(Util.RETRY_TIMEOUT)
         except subprocess.CalledProcessError as e:
             if e.returncode > 128:
@@ -56,7 +56,7 @@ def pull(*args):
         try:
             Util.cmdExecWithStuckCheck(["/usr/bin/git", "pull", "--rebase"] + list(args), additional_environ())
             break
-        except Util.ProcessStuckError:
+        except ProcessStuckError:
             time.sleep(Util.RETRY_TIMEOUT)
         except subprocess.CalledProcessError as e:
             if e.returncode > 128:

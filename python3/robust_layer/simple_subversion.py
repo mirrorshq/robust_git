@@ -27,7 +27,7 @@ import os
 import re
 import time
 import subprocess
-from ._util import Util
+from ._util import Util, ProcessStuckError
 
 
 def clean(dest_dir):
@@ -46,7 +46,7 @@ def checkout(dest_directory, url, quiet=False):
             cmd = "/usr/bin/svn update %s \"%s\" \"%s\"" % (quietArg, url, dest_directory)
             Util.shellExecWithStuckCheck(cmd, {}, quiet)
             break
-        except Util.ProcessStuckError:
+        except ProcessStuckError:
             time.sleep(Util.RETRY_TIMEOUT)
         except subprocess.CalledProcessError as e:
             if e.returncode > 128:
@@ -87,7 +87,7 @@ def update(dest_directory, recheckout_on_failure=False, url=None, quiet=False):
                 cmd = "/usr/bin/svn -C \"%s\" update %s" % (dest_directory, quietArg)
                 Util.shellExecWithStuckCheck(cmd, {}, quiet)
                 break
-            except Util.ProcessStuckError:
+            except ProcessStuckError:
                 time.sleep(1.0)
             except subprocess.CalledProcessError as e:
                 if e.returncode > 128:
