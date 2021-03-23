@@ -140,7 +140,7 @@ class Util:
     def shellExecWithStuckCheck(cmd, envDict={}, bQuiet=False):
         # run the process
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                shell=True, env=envDict)
+                                shell=True, universal_newlines=True, env=envDict)
         Util._communicateWithStuckCheck(proc, bQuiet)
 
     @staticmethod
