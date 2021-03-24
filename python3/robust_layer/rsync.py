@@ -25,15 +25,16 @@
 
 import time
 import subprocess
-from ._util import Util, STUCK_TIMEOUT
+from . import TIMEOUT, RETRY_WAIT
+from ._util import Util
 
 
 def exec(*args):
     while True:
         try:
-            Util.cmdExec("/usr/bin/rsync", "--timeout=%d" % (STUCK_TIMEOUT), *args)
+            Util.cmdExec("/usr/bin/rsync", "--timeout=%d" % (TIMEOUT), *args)
             break
         except subprocess.CalledProcessError as e:
             if e.returncode > 128:
                 raise                    # terminated by signal, no retry needed
-            time.sleep(1.0)
+            time.sleep(RETRY_WAIT)

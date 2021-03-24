@@ -24,11 +24,12 @@
 
 
 import re
-from ._util import Util, STUCK_TIMEOUT
+from . import TIMEOUT
+from ._util import Util
 
 
 def additional_param():
-    return ["-t", "0", "-w", str(STUCK_TIMEOUT), "--random-wait", "-T", str(STUCK_TIMEOUT)]
+    return ["-t", "0", "-w", str(TIMEOUT), "--random-wait", "-T", str(TIMEOUT)]
 
 
 def exec(*args):

@@ -28,10 +28,10 @@ import time
 import shutil
 import selectors
 import subprocess
+from . import TIMEOUT
 
 
-STUCK_TIMEOUT = 60     # unit: second
-RETRY_TIMEOUT = 1      # unit: second
+PARENT_WAIT = 1.0
 
 
 class ProcessStuckError(Exception):
@@ -86,7 +86,7 @@ class Util:
                              universal_newlines=True)
         if ret.returncode > 128:
             # for scenario 1, caller's signal handler has the oppotunity to get executed during sleep
-            time.sleep(1.0)
+            time.sleep(PARENT_WAIT)
         if ret.returncode != 0:
             print(ret.stdout)
             ret.check_returncode()
@@ -111,7 +111,7 @@ class Util:
 
         ret = subprocess.run([cmd] + list(kargs), universal_newlines=True)
         if ret.returncode > 128:
-            time.sleep(1.0)
+            time.sleep(PARENT_WAIT)
         ret.check_returncode()
 
     @staticmethod
@@ -130,7 +130,7 @@ class Util:
                              shell=True, universal_newlines=True)
         if ret.returncode > 128:
             # for scenario 1, caller's signal handler has the oppotunity to get executed during sleep
-            time.sleep(1.0)
+            time.sleep(PARENT_WAIT)
         if ret.returncode != 0:
             print(ret.stdout)
             ret.check_returncode()
@@ -160,11 +160,11 @@ class Util:
             selector.register(proc.stdout, selectors.EVENT_READ)
             selector.register(proc.stderr, selectors.EVENT_READ)
             while selector.get_map():
-                res = selector.select(STUCK_TIMEOUT)
+                res = selector.select(TIMEOUT)
                 if res == []:
                     bStuck = True
                     if not bQuiet:
-                        sys.stderr.write("Process stuck for %d second(s), terminated.\n" % (STUCK_TIMEOUT))
+                        sys.stderr.write("Process stuck for %d second(s), terminated.\n" % (TIMEOUT))
                     proc.terminate()
                     break
                 for key, events in res:
@@ -184,8 +184,8 @@ class Util:
         proc.communicate()
 
         if proc.returncode > 128:
-            time.sleep(1.0)
+            time.sleep(PARENT_WAIT)
         if bStuck:
-            raise ProcessStuckError(proc.args, STUCK_TIMEOUT)
+            raise ProcessStuckError(proc.args, TIMEOUT)
         if proc.returncode:
             raise subprocess.CalledProcessError(proc.returncode, proc.args, sStdout, sStderr)

@@ -27,6 +27,7 @@ import os
 import re
 import time
 import subprocess
+from . import RETRY_WAIT
 from ._util import Util, ProcessStuckError
 
 
@@ -47,12 +48,12 @@ def checkout(dest_directory, url, quiet=False):
             Util.shellExecWithStuckCheck(cmd, {}, quiet)
             break
         except ProcessStuckError:
-            time.sleep(Util.RETRY_TIMEOUT)
+            time.sleep(RETRY_WAIT)
         except subprocess.CalledProcessError as e:
             if e.returncode > 128:
                 # terminated by signal, no retry needed
                 raise
-            time.sleep(Util.RETRY_TIMEOUT)
+            time.sleep(RETRY_WAIT)
 
 
 def update(dest_directory, recheckout_on_failure=False, url=None, quiet=False):

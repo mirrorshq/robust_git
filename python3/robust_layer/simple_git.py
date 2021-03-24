@@ -26,6 +26,7 @@
 import os
 import time
 import subprocess
+from . import RETRY_WAIT
 from ._util import Util, ProcessStuckError
 from .git import additional_environ
 
@@ -47,12 +48,12 @@ def clone(dest_directory, url, quiet=False):
             Util.shellExecWithStuckCheck(cmd, additional_environ(), quiet)
             break
         except ProcessStuckError:
-            time.sleep(Util.RETRY_TIMEOUT)
+            time.sleep(RETRY_WAIT)
         except subprocess.CalledProcessError as e:
             if e.returncode > 128:
                 # terminated by signal, no retry needed
                 raise
-            time.sleep(Util.RETRY_TIMEOUT)
+            time.sleep(RETRY_WAIT)
 
 
 def pull(dest_directory, reclone_on_failure=False, url=None, quiet=False):
