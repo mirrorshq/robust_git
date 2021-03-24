@@ -25,13 +25,14 @@
 
 import time
 import subprocess
-from ._util import Util, STUCK_TIMEOUT, ProcessStuckError
+from . import TIMEOUT, RETRY_WAIT
+from ._util import Util, ProcessStuckError
 
 
 def additional_environ():
     return {
         "GIT_HTTP_LOW_SPEED_LIMIT": "1024",
-        "GIT_HTTP_LOW_SPEED_TIME": str(STUCK_TIMEOUT),
+        "GIT_HTTP_LOW_SPEED_TIME": str(TIMEOUT),
     }
 
 
@@ -41,12 +42,12 @@ def clone(*args):
             Util.cmdExecWithStuckCheck(["/usr/bin/git", "clone"] + list(args), additional_environ())
             break
         except ProcessStuckError:
-            time.sleep(Util.RETRY_TIMEOUT)
+            time.sleep(RETRY_WAIT)
         except subprocess.CalledProcessError as e:
             if e.returncode > 128:
                 # terminated by signal, no retry needed
                 raise
-            time.sleep(Util.RETRY_TIMEOUT)
+            time.sleep(RETRY_WAIT)
 
 
 def pull(*args):
@@ -57,9 +58,9 @@ def pull(*args):
             Util.cmdExecWithStuckCheck(["/usr/bin/git", "pull", "--rebase"] + list(args), additional_environ())
             break
         except ProcessStuckError:
-            time.sleep(Util.RETRY_TIMEOUT)
+            time.sleep(RETRY_WAIT)
         except subprocess.CalledProcessError as e:
             if e.returncode > 128:
                 # terminated by signal, no retry needed
                 raise
-            time.sleep(Util.RETRY_TIMEOUT)
+            time.sleep(RETRY_WAIT)
