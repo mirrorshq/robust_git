@@ -51,11 +51,9 @@ def clone(*args):
 
 
 def fetch(*args):
-    assert not any(x in ["-r", "--rebase", "--no-rebase"] for x in args)
-
     while True:
         try:
-            Util.cmdExecWithStuckCheck(["/usr/bin/git", "fetch", "--rebase"] + list(args), additional_environ())
+            Util.cmdExecWithStuckCheck(["/usr/bin/git", "fetch"] + list(args), additional_environ())
             break
         except ProcessStuckError:
             time.sleep(RETRY_WAIT)
