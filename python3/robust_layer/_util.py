@@ -47,6 +47,12 @@ class ProcessStuckError(Exception):
 class Util:
 
     @staticmethod
+    def mergeDict(dict1, dict2):
+        ret = dict(dict1)
+        ret.update(dict2)
+        return ret
+
+    @staticmethod
     def forceDelete(path):
         if os.path.islink(path):
             os.remove(path)

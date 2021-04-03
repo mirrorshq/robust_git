@@ -23,6 +23,7 @@
 # THE SOFTWARE.
 
 
+import os
 import time
 import subprocess
 from . import TIMEOUT, RETRY_WAIT
@@ -37,9 +38,11 @@ def additional_environ():
 
 
 def clone(*args):
+    assert not any(x in os.environ for x in additional_environ())
+
     while True:
         try:
-            Util.cmdExecWithStuckCheck(["/usr/bin/git", "clone"] + list(args), additional_environ())
+            Util.cmdExecWithStuckCheck(["/usr/bin/git", "clone"] + list(args), Util.mergeDict(os.environ, additional_environ()))
             break
         except ProcessStuckError:
             time.sleep(RETRY_WAIT)
@@ -51,9 +54,11 @@ def clone(*args):
 
 
 def fetch(*args):
+    assert not any(x in os.environ for x in additional_environ())
+
     while True:
         try:
-            Util.cmdExecWithStuckCheck(["/usr/bin/git", "fetch"] + list(args), additional_environ())
+            Util.cmdExecWithStuckCheck(["/usr/bin/git", "fetch"] + list(args), Util.mergeDict(os.environ, additional_environ()))
             break
         except ProcessStuckError:
             time.sleep(RETRY_WAIT)
@@ -65,11 +70,12 @@ def fetch(*args):
 
 
 def pull(*args):
+    assert not any(x in os.environ for x in additional_environ())
     assert not any(x in ["-r", "--rebase", "--no-rebase"] for x in args)
 
     while True:
         try:
-            Util.cmdExecWithStuckCheck(["/usr/bin/git", "pull", "--rebase"] + list(args), additional_environ())
+            Util.cmdExecWithStuckCheck(["/usr/bin/git", "pull", "--rebase"] + list(args), Util.mergeDict(os.environ, additional_environ()))
             break
         except ProcessStuckError:
             time.sleep(RETRY_WAIT)
@@ -81,9 +87,11 @@ def pull(*args):
 
 
 def push(*args):
+    assert not any(x in os.environ for x in additional_environ())
+
     while True:
         try:
-            Util.cmdExecWithStuckCheck(["/usr/bin/git", "push"] + list(args), additional_environ())
+            Util.cmdExecWithStuckCheck(["/usr/bin/git", "push"] + list(args), Util.mergeDict(os.environ, additional_environ()))
             break
         except ProcessStuckError:
             time.sleep(RETRY_WAIT)
