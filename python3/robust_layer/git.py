@@ -41,83 +41,49 @@ def additional_environ():
 def clone(*args):
     assert not any(x in os.environ for x in additional_environ())
 
-    while True:
-        try:
-            Util.cmdExecWithStuckCheck(["/usr/bin/git", "clone"] + list(args), Util.mergeDict(os.environ, additional_environ()))
-            break
-        except ProcessStuckError:
-            time.sleep(RETRY_WAIT)
-        except subprocess.CalledProcessError as e:
-            if e.returncode > 128:
-                # terminated by signal, no retry needed
-                raise
-            m = re.fullmatch("fatal: unable to access '.*': Couldn't resolve host '(.*)'", e.stderr)
-            if m is not None and Util.isDomainNamePrivate(m.group(1)):
-                # unrecoverable error, don't retry any more
-                raise PrivateUrlNotExistError()
-            time.sleep(RETRY_WAIT)
+    _doGitNetOp(["/usr/bin/git", "clone"] + list(args))
 
 
 def fetch(*args):
     assert not any(x in os.environ for x in additional_environ())
 
-    while True:
-        try:
-            Util.cmdExecWithStuckCheck(["/usr/bin/git", "fetch"] + list(args), Util.mergeDict(os.environ, additional_environ()))
-            break
-        except ProcessStuckError:
-            time.sleep(RETRY_WAIT)
-        except subprocess.CalledProcessError as e:
-            if e.returncode > 128:
-                # terminated by signal, no retry needed
-                raise
-            m = re.fullmatch("fatal: unable to access '.*': Couldn't resolve host '(.*)'", e.stderr)
-            if m is not None and Util.isDomainNamePrivate(m.group(1)):
-                # unrecoverable error, don't retry any more
-                raise PrivateUrlNotExistError()
-            time.sleep(RETRY_WAIT)
+    _doGitNetOp(["/usr/bin/git", "fetch"] + list(args))
 
 
 def pull(*args):
     assert not any(x in os.environ for x in additional_environ())
     assert not any(x in ["-r", "--rebase", "--no-rebase"] for x in args)
 
-    while True:
-        try:
-            Util.cmdExecWithStuckCheck(["/usr/bin/git", "pull", "--rebase"] + list(args), Util.mergeDict(os.environ, additional_environ()))
-            break
-        except ProcessStuckError:
-            time.sleep(RETRY_WAIT)
-        except subprocess.CalledProcessError as e:
-            if e.returncode > 128:
-                # terminated by signal, no retry needed
-                raise
-            m = re.fullmatch("fatal: unable to access '.*': Couldn't resolve host '(.*)'", e.stderr)
-            if m is not None and Util.isDomainNamePrivate(m.group(1)):
-                # unrecoverable error, don't retry any more
-                raise PrivateUrlNotExistError()
-            time.sleep(RETRY_WAIT)
+    _doGitNetOp(["/usr/bin/git", "pull", "--rebase"] + list(args))
 
 
 def push(*args):
     assert not any(x in os.environ for x in additional_environ())
 
-    while True:
-        try:
-            Util.cmdExecWithStuckCheck(["/usr/bin/git", "push"] + list(args), Util.mergeDict(os.environ, additional_environ()))
-            break
-        except ProcessStuckError:
-            time.sleep(RETRY_WAIT)
-        except subprocess.CalledProcessError as e:
-            if e.returncode > 128:
-                # terminated by signal, no retry needed
-                raise
-            m = re.fullmatch("fatal: unable to access '.*': Couldn't resolve host '(.*)'", e.stderr)
-            if m is not None and Util.isDomainNamePrivate(m.group(1)):
-                # unrecoverable error, don't retry any more
-                raise PrivateUrlNotExistError()
-            time.sleep(RETRY_WAIT)
+    _doGitNetOp(["/usr/bin/git", "push"] + list(args))
 
 
 class PrivateUrlNotExistError(Exception):
     pass
+
+
+def _doGitNetOp(cmdList):
+    while True:
+        try:
+            Util.cmdExecWithStuckCheck(cmdList, Util.mergeDict(os.environ, additional_environ()))
+            break
+        except ProcessStuckError:
+            time.sleep(RETRY_WAIT)
+        except subprocess.CalledProcessError as e:
+            # terminated by signal, no retry needed
+            if e.returncode > 128:
+                raise
+
+            # unrecoverable error: private domain name does not exists
+            # we think public domain names are always well maintained, but private domain names are not.
+            # always retry for public domain name failure of any reason, abort opertaion when private domain name does not exist
+            m = re.fullmatch("fatal: unable to access '.*': Couldn't resolve host '(.*)'", e.stderr)
+            if m is not None and Util.domainNameIsPrivate(m.group(1)) and Util.domainNameNotExist(m.group(1)):
+                raise PrivateUrlNotExistError()
+
+            time.sleep(RETRY_WAIT)

@@ -53,13 +53,15 @@ def clone(dest_directory, url, quiet=False):
         except ProcessStuckError:
             time.sleep(RETRY_WAIT)
         except subprocess.CalledProcessError as e:
+            # terminated by signal, no retry needed
             if e.returncode > 128:
-                # terminated by signal, no retry needed
                 raise
+
+            # unrecoverable error: private domain name does not exists (see comments in robust_layer.git)
             m = re.fullmatch("fatal: unable to access '.*': Couldn't resolve host '(.*)'", e.stderr)
-            if m is not None and Util.isDomainNamePrivate(m.group(1)):
-                # unrecoverable error, don't retry any more
+            if m is not None and Util.domainNameIsPrivate(m.group(1)) and Util.domainNameNotExist(m.group(1)):
                 raise PrivateUrlNotExistError()
+
             time.sleep(RETRY_WAIT)
 
 
@@ -99,38 +101,45 @@ def pull(dest_directory, reclone_on_failure=False, url=None, quiet=False):
             except ProcessStuckError:
                 time.sleep(1.0)
             except subprocess.CalledProcessError as e:
+                # terminated by signal, no retry needed
                 if e.returncode > 128:
-                    raise                    # terminated by signal, no retry needed
+                    raise
 
+                # unrecoverable error: private domain name does not exists (see comments in robust_layer.git)
                 m = re.fullmatch("fatal: unable to access '.*': Couldn't resolve host '(.*)'", e.stderr)
-                if m is not None and Util.isDomainNamePrivate(m.group(1)):
-                    # unrecoverable error, don't retry any more
+                if m is not None and Util.domainNameIsPrivate(m.group(1)) and Util.domainNameNotExist(m.group(1)):
                     raise PrivateUrlNotExistError()
 
+                # switch-to-clone-able error: merge failure
                 if "fatal: refusing to merge unrelated histories" in str(e.stderr):
                     if not reclone_on_failure:
                         raise
                     mode = "clone"
-                else:
-                    time.sleep(1.0)
-        elif mode == "clone":
+                    continue
+
+                time.sleep(1.0)
+                continue
+
+        if mode == "clone":
             Util.forceDelete(dest_directory)
             try:
                 cmd = "/usr/bin/git clone %s \"%s\" \"%s\"" % (quietArg, url, dest_directory)
                 Util.shellExecWithStuckCheck(cmd, Util.mergeDict(os.environ, additional_environ()), quiet)
                 break
             except subprocess.CalledProcessError as e:
+                # terminated by signal, no retry needed
                 if e.returncode > 128:
-                    raise                    # terminated by signal, no retry needed
+                    raise
 
+                # unrecoverable error: private domain name does not exists (see comments in robust_layer.git)
                 m = re.fullmatch("fatal: unable to access '.*': Couldn't resolve host '(.*)'", e.stderr)
-                if m is not None and Util.isDomainNamePrivate(m.group(1)):
-                    # unrecoverable error, don't retry any more
+                if m is not None and Util.domainNameIsPrivate(m.group(1)) and Util.domainNameNotExist(m.group(1)):
                     raise PrivateUrlNotExistError()
 
                 time.sleep(1.0)
-        else:
-            assert False
+                continue
+
+        assert False
 
 
 def _gitGetUrl(dirName):
