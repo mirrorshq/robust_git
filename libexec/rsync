@@ -3,4 +3,4 @@
 import sys
 import robust_layer.rsync
 
-robust_layer.rsync.exec(sys.argv[1:])
+robust_layer.rsync.exec(*sys.argv[1:])
