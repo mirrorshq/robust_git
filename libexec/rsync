@@ -1,0 +1,6 @@
+#!/usr/bin/env python3
+
+import sys
+import robust_layer.rsync
+
+robust_layer.rsync.exec(sys.args[1:])

@@ -1,0 +1,6 @@
+#!/usr/bin/env python3
+
+import sys
+import robust_layer.wget
+
+robust_layer.wget.exec(sys.args[1:])

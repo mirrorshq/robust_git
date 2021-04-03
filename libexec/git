@@ -1,0 +1,25 @@
+#!/usr/bin/env python3
+
+import sys
+import robust_layer.git
+
+if len(sys.args) < 2:
+    raise Exception("not enough parameters")
+
+if sys.args[1] == "clone":
+    robust_layer.git.clone(sys.args[2:])
+    sys.exit(0)
+
+if sys.args[1] == "fetch":
+    robust_layer.git.fetch(sys.args[2:])
+    sys.exit(0)
+
+if sys.args[1] == "pull":
+    robust_layer.git.pull(sys.args[2:])
+    sys.exit(0)
+
+if sys.args[1] == "push":
+    robust_layer.git.push(sys.args[2:])
+    sys.exit(0)
+
+raise Exception("operation \"%s\" not supported" % (sys.args[1]))
