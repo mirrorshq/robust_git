@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 
 import sys
+import subprocess
 import robust_layer.wget
 
-robust_layer.wget.exec(*sys.argv[1:])
+try:
+    robust_layer.wget.exec(*sys.argv[1:])
+except subprocess.CalledProcessError:
+    sys.exit(e.returncode)
