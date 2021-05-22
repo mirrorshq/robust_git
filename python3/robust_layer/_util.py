@@ -100,7 +100,22 @@ class Util:
         return ret.stdout.rstrip()
 
     @staticmethod
-    def cmdExec(cmd, *kargs):
+    def shellCall(cmd):
+        # call command with shell to execute backstage job
+        # scenarios are the same as Util.cmdCall
+
+        ret = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                             shell=True, universal_newlines=True)
+        if ret.returncode > 128:
+            # for scenario 1, caller's signal handler has the oppotunity to get executed during sleep
+            time.sleep(PARENT_WAIT)
+        if ret.returncode != 0:
+            print(ret.stdout)
+            ret.check_returncode()
+        return ret.stdout.rstrip()
+
+    @staticmethod
+    def cmdListExec(cmdList, envDict={}, bQuiet=False):
         # call command to execute frontend job
         #
         # scenario 1, process group receives SIGTERM, SIGINT and SIGHUP:
@@ -116,13 +131,6 @@ class Util:
 
         # FIXME, the above condition is not met, Util.shellExec has the same problem
 
-        ret = subprocess.run([cmd] + list(kargs), universal_newlines=True)
-        if ret.returncode > 128:
-            time.sleep(PARENT_WAIT)
-        ret.check_returncode()
-
-    @staticmethod
-    def cmdListExec(cmdList, envDict={}, bQuiet=False):
         proc = subprocess.Popen(cmdList, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                 universal_newlines=True, env=envDict)
         Util._communicate(proc, bQuiet)
@@ -132,21 +140,6 @@ class Util:
         proc = subprocess.Popen(cmdList, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                 universal_newlines=True, env=envDict)
         Util._communicateWithStuckCheck(proc, bQuiet)
-
-    @staticmethod
-    def shellCall(cmd):
-        # call command with shell to execute backstage job
-        # scenarios are the same as Util.cmdCall
-
-        ret = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                             shell=True, universal_newlines=True)
-        if ret.returncode > 128:
-            # for scenario 1, caller's signal handler has the oppotunity to get executed during sleep
-            time.sleep(PARENT_WAIT)
-        if ret.returncode != 0:
-            print(ret.stdout)
-            ret.check_returncode()
-        return ret.stdout.rstrip()
 
     @staticmethod
     def shellExec(cmd, envDict={}, bQuiet=False):
