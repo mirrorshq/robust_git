@@ -144,7 +144,6 @@ class Util:
 
         # redirect proc.stdout/proc.stderr to stdout/stderr
         # make CalledProcessError contain stdout/stderr content
-        # terminate the process and raise exception if they stuck
         sStdout = ""
         with pselector() as selector:
             selector.register(ptyProc, selectors.EVENT_READ)
