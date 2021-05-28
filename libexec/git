@@ -5,7 +5,7 @@ import subprocess
 import robust_layer.git
 
 if len(sys.argv) < 2:
-    sys.stderr.print("Not enough parameters")
+    print("Not enough parameters", file=sys.stderr)
     sys.exit(1)
 
 try:
@@ -18,10 +18,10 @@ try:
     elif sys.argv[1] == "push":
         robust_layer.git.push(*sys.argv[2:])
     else:
-        sys.stderr.print("Operation \"%s\" not supported" % (sys.argv[1]))
+        print("Operation \"%s\" not supported" % (sys.argv[1]), file=sys.stderr)
         sys.exit(1)
 except robust_layer.git.PrivateUrlNotExistError:
-    sys.stderr.print("Unrecoverable error: Private URL doest not exist.")
+    print("Unrecoverable error: Private URL doest not exist.", file=sys.stderr)
     sys.exit(1)
 except subprocess.CalledProcessError:
     sys.exit(e.returncode)
