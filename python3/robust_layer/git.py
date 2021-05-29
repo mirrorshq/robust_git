@@ -25,6 +25,7 @@
 
 import os
 import re
+import sys
 import time
 import subprocess
 from . import TIMEOUT, RETRY_WAIT
@@ -41,26 +42,26 @@ def additional_environ():
 def clone(*args):
     assert not any(x in os.environ for x in additional_environ())
 
-    _doGitNetOp(["/usr/bin/git", "clone"] + list(args))
+    _doGitNetOp(["clone"] + list(args))
 
 
 def fetch(*args):
     assert not any(x in os.environ for x in additional_environ())
 
-    _doGitNetOp(["/usr/bin/git", "fetch"] + list(args))
+    _doGitNetOp(["fetch"] + list(args))
 
 
 def pull(*args):
     assert not any(x in os.environ for x in additional_environ())
     assert not any(x in ["-r", "--rebase", "--no-rebase"] for x in args)
 
-    _doGitNetOp(["/usr/bin/git", "pull", "--rebase"] + list(args))
+    _doGitNetOp(["pull", "--rebase"] + list(args))
 
 
 def push(*args):
     assert not any(x in os.environ for x in additional_environ())
 
-    _doGitNetOp(["/usr/bin/git", "push"] + list(args))
+    _doGitNetOp(["push"] + list(args))
 
 
 class PrivateUrlNotExistError(Exception):
@@ -68,9 +69,14 @@ class PrivateUrlNotExistError(Exception):
 
 
 def _doGitNetOp(cmdList):
+    # Util.cmdListExec() use pipe to do advanced process, we add "--progress" so that progress can still be displayed
+    # "--quiet" would take priority if specified by user
+    if sys.stderr.isatty() and "--progress" not in cmdList:
+        cmdList.insert(0, "--progress")
+
     while True:
         try:
-            Util.cmdListPtyExec(cmdList, Util.mergeDict(os.environ, additional_environ()))
+            Util.cmdListExec(["/usr/bin/git"] + cmdList, Util.mergeDict(os.environ, additional_environ()))
             break
         except ProcessStuckError:
             time.sleep(RETRY_WAIT)

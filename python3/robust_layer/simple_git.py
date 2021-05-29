@@ -24,6 +24,7 @@
 
 
 import os
+import sys
 import time
 import subprocess
 from . import RETRY_WAIT
@@ -41,13 +42,15 @@ def clone(dest_directory, url, quiet=False):
 
     if quiet:
         quietArg = "-q"
+    elif sys.stderr.isatty():
+        quietArg = "--progress"    # Util.shellExec() use pipe to do advanced process, we add "--progress" so that progress can still be displayed
     else:
         quietArg = ""
 
     while True:
         try:
             cmd = "/usr/bin/git clone %s \"%s\" \"%s\"" % (quietArg, url, dest_directory)
-            Util.shellPtyExec(cmd, Util.mergeDict(os.environ, additional_environ()), quiet)
+            Util.shellExec(cmd, Util.mergeDict(os.environ, additional_environ()), quiet)
             break
         except ProcessStuckError:
             time.sleep(RETRY_WAIT)
@@ -72,6 +75,8 @@ def pull(dest_directory, reclone_on_failure=False, url=None, quiet=False):
 
     if quiet:
         quietArg = "-q"
+    elif sys.stderr.isatty():
+        quietArg = "--progress"    # Util.shellExec() use pipe to do advanced process, we add "--progress" so that progress can still be displayed
     else:
         quietArg = ""
 
@@ -93,7 +98,7 @@ def pull(dest_directory, reclone_on_failure=False, url=None, quiet=False):
             clean(dest_directory)
             try:
                 cmd = "/usr/bin/git -C \"%s\" pull --rebase --no-stat %s" % (dest_directory, quietArg)
-                Util.shellPtyExec(cmd, Util.mergeDict(os.environ, additional_environ()), quiet)
+                Util.shellExec(cmd, Util.mergeDict(os.environ, additional_environ()), quiet)
                 break
             except ProcessStuckError:
                 time.sleep(1.0)
@@ -120,7 +125,7 @@ def pull(dest_directory, reclone_on_failure=False, url=None, quiet=False):
             Util.forceDelete(dest_directory)
             try:
                 cmd = "/usr/bin/git clone %s \"%s\" \"%s\"" % (quietArg, url, dest_directory)
-                Util.shellPtyExec(cmd, Util.mergeDict(os.environ, additional_environ()), quiet)
+                Util.shellExec(cmd, Util.mergeDict(os.environ, additional_environ()), quiet)
                 break
             except ProcessStuckError:
                 time.sleep(1.0)

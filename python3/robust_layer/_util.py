@@ -116,27 +116,70 @@ class Util:
         return ret.stdout.rstrip()
 
     @staticmethod
+    def shellExec(cmd, envDict={}):
+        proc = subprocess.Popen(cmd, env=envDict,
+                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                shell=True, universal_newlines=True)
+        Util._communicate(proc)
+
+    @staticmethod
+    def cmdListExec(cmdList, envDict={}):
+        proc = subprocess.Popen(cmdList, env=envDict,
+                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                universal_newlines=True)
+        Util._communicate(proc)
+
+    @staticmethod
     def cmdListPtyExec(cmdList, envDict={}, bQuiet=False):
         proc = ptyprocess.PtyProcessUnicode.spawn(cmdList, env=envDict)
-        Util._communicate(proc)
+        Util._communicateWithPty(proc)
 
     @staticmethod
     def cmdListPtyExecWithStuckCheck(cmdList, envDict={}, bQuiet=False):
         proc = ptyprocess.PtyProcessUnicode.spawn(cmdList, env=envDict)
-        Util._communicateWithStuckCheck(proc, bQuiet)
+        Util._communicateWithPtyStuckCheck(proc, bQuiet)
 
     @staticmethod
     def shellPtyExec(cmd, envDict={}, bQuiet=False):
         proc = ptyprocess.PtyProcessUnicode.spawn(["/bin/sh", "-c", cmd], env=envDict)
-        Util._communicate(proc)
+        Util._communicateWithPty(proc)
 
     @staticmethod
     def shellPtyExecWithStuckCheck(cmd, envDict={}, bQuiet=False):
         proc = ptyprocess.PtyProcessUnicode.spawn(["/bin/sh", "-c", cmd], env=envDict)
-        Util._communicateWithStuckCheck(proc, bQuiet)
+        Util._communicateWithPtyStuckCheck(proc, bQuiet)
 
     @staticmethod
-    def _communicate(ptyProc):
+    def _communicate(proc):
+        if hasattr(selectors, 'PollSelector'):
+            pselector = selectors.PollSelector
+        else:
+            pselector = selectors.SelectSelector
+
+        # redirect proc.stdout/proc.stderr to stdout/stderr
+        # make CalledProcessError contain stdout/stderr content
+        sStdout = ""
+        with pselector() as selector:
+            selector.register(proc, selectors.EVENT_READ)
+            while selector.get_map():
+                res = selector.select(TIMEOUT)
+                for key, events in res:
+                    try:
+                        data = key.fileobj.read()
+                    except EOFError:
+                        selector.unregister(key.fileobj)
+                        continue
+                    sStdout += data
+                    sys.stdout.write(data)
+
+        retcode = proc.wait()
+        if retcode > 128:
+            time.sleep(PARENT_WAIT)
+        if retcode != 0:
+            raise subprocess.CalledProcessError(retcode, proc.args, sStdout, "")
+
+    @staticmethod
+    def _communicateWithPty(ptyProc):
         if hasattr(selectors, 'PollSelector'):
             pselector = selectors.PollSelector
         else:
@@ -165,7 +208,7 @@ class Util:
             raise subprocess.CalledProcessError(ptyProc.exitstatus, ptyProc.argv, sStdout, "")
 
     @staticmethod
-    def _communicateWithStuckCheck(ptyProc, bQuiet):
+    def _communicateWithPtyStuckCheck(ptyProc, bQuiet):
         if hasattr(selectors, 'PollSelector'):
             pselector = selectors.PollSelector
         else:

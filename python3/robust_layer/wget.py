@@ -24,6 +24,7 @@
 
 
 import re
+import sys
 from . import TIMEOUT
 from ._util import Util
 
@@ -36,8 +37,19 @@ def exec(*args):
     for x in args:
         assert x != "--random-wait"
         assert not re.fullmatch("(-t|--tries|-w|--wait|-T|--timetout)(=.*)?", x)
+    args = list(args)
 
-    Util.cmdListPtyExec(["/usr/bin/wget"] + additional_param() + list(args))
+    # Util.cmdListExec() use pipe to do advanced process, here is to ensure progress is not affected
+    if sys.stderr.isatty():
+        bFound = False
+        for i in range(0, len(args)):
+            if args[i].startswith("--progress=") and not args[i].endswith(":force"):
+                args[i] += ":force"
+                bFound = True
+        if not bFound:
+            args.insert(0, "--progress=bar:force")
+
+    Util.cmdListExec(["/usr/bin/wget"] + additional_param() + args)
 
 
 class PrivateUrlNotExistError(Exception):
