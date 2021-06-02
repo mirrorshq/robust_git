@@ -163,13 +163,12 @@ class Util:
             while selector.get_map():
                 res = selector.select(TIMEOUT)
                 for key, events in res:
-                    data = key.fileobj.read()
+                    data = key.fileobj.read(1)
                     if data == b'':
                         selector.unregister(key.fileobj)
                         continue
                     sStdout += data
                     sys.stdout.buffer.write(data)
-                    sys.stdout.flush()
 
         retcode = proc.wait()
         if retcode > 128:
