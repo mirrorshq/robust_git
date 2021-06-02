@@ -157,6 +157,7 @@ class Util:
         while c != b'':
             sStdout += c
             sys.stdout.buffer.write(c)
+            sys.stdout.flush()
             c = proc.stdout.read(1)
 
         retcode = proc.wait()
