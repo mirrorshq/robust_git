@@ -23,5 +23,5 @@ try:
 except robust_layer.git.PrivateUrlNotExistError:
     print("Unrecoverable error: Private URL doest not exist.", file=sys.stderr)
     sys.exit(1)
-except subprocess.CalledProcessError:
+except subprocess.CalledProcessError as e:
     sys.exit(e.returncode)
