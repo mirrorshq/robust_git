@@ -116,21 +116,21 @@ class Util:
         return ret.stdout.rstrip()
 
     @staticmethod
-    def shellExec(cmd, envDict={}):
+    def shellExec(cmd, envDict=None):
         proc = subprocess.Popen(cmd, env=envDict,
                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                 shell=True, universal_newlines=True)
         Util._communicate(proc)
 
     @staticmethod
-    def cmdListExec(cmdList, envDict={}):
+    def cmdListExec(cmdList, envDict=None):
         proc = subprocess.Popen(cmdList, env=envDict,
                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                 universal_newlines=True)
         Util._communicate(proc)
 
     @staticmethod
-    def cmdListPtyExec(cmdList, envDict={}, bQuiet=False):
+    def cmdListPtyExec(cmdList, envDict=None, bQuiet=False):
         proc = ptyprocess.PtyProcessUnicode.spawn(cmdList, env=envDict)
         Util._communicateWithPty(proc)
 
@@ -140,12 +140,12 @@ class Util:
         Util._communicateWithPtyStuckCheck(proc, bQuiet)
 
     @staticmethod
-    def shellPtyExec(cmd, envDict={}, bQuiet=False):
+    def shellPtyExec(cmd, envDict=None, bQuiet=False):
         proc = ptyprocess.PtyProcessUnicode.spawn(["/bin/sh", "-c", cmd], env=envDict)
         Util._communicateWithPty(proc)
 
     @staticmethod
-    def shellPtyExecWithStuckCheck(cmd, envDict={}, bQuiet=False):
+    def shellPtyExecWithStuckCheck(cmd, envDict=None, bQuiet=False):
         proc = ptyprocess.PtyProcessUnicode.spawn(["/bin/sh", "-c", cmd], env=envDict)
         Util._communicateWithPtyStuckCheck(proc, bQuiet)
 
@@ -160,13 +160,12 @@ class Util:
         # make CalledProcessError contain stdout/stderr content
         sStdout = ""
         with pselector() as selector:
-            selector.register(proc, selectors.EVENT_READ)
+            selector.register(proc.stdout, selectors.EVENT_READ)
             while selector.get_map():
                 res = selector.select(TIMEOUT)
                 for key, events in res:
-                    try:
-                        data = key.fileobj.read()
-                    except EOFError:
+                    data = key.fileobj.read()
+                    if data == "":
                         selector.unregister(key.fileobj)
                         continue
                     sStdout += data
