@@ -42,33 +42,33 @@ def additional_environ():
 def clone(*args):
     assert not any(x in os.environ for x in additional_environ())
 
-    _doGitNetOp(["clone"] + list(args))
+    _doGitNetOp("clone", list(args))
 
 
 def fetch(*args):
     assert not any(x in os.environ for x in additional_environ())
 
-    _doGitNetOp(["fetch"] + list(args))
+    _doGitNetOp("fetch", list(args))
 
 
 def pull(*args):
     assert not any(x in os.environ for x in additional_environ())
     assert not any(x in ["-r", "--rebase", "--no-rebase"] for x in args)
 
-    _doGitNetOp(["pull", "--rebase"] + list(args))
+    _doGitNetOp("pull", ["--rebase"] + list(args))
 
 
 def push(*args):
     assert not any(x in os.environ for x in additional_environ())
 
-    _doGitNetOp(["push"] + list(args))
+    _doGitNetOp("push", list(args))
 
 
 class PrivateUrlNotExistError(Exception):
     pass
 
 
-def _doGitNetOp(cmdList):
+def _doGitNetOp(action, cmdList):
     # Util.cmdListExec() use pipe to do advanced process, we add "--progress" so that progress can still be displayed
     # "--quiet" would take priority if specified by user
     if sys.stderr.isatty() and "--progress" not in cmdList:
@@ -76,7 +76,7 @@ def _doGitNetOp(cmdList):
 
     while True:
         try:
-            Util.cmdListExec(["/usr/bin/git"] + cmdList, Util.mergeDict(os.environ, additional_environ()))
+            Util.cmdListExec(["/usr/bin/git", action] + cmdList, Util.mergeDict(os.environ, additional_environ()))
             break
         except ProcessStuckError:
             time.sleep(RETRY_WAIT)
