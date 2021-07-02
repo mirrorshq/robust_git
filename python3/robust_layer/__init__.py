@@ -35,5 +35,5 @@ __author__ = "fpemud@sina.com (Fpemud)"
 __version__ = "0.0.1"
 
 
-TIMEOUT = 60        # general timeout is 60 seconds
+TIMEOUT = 10        # general timeout is 10 seconds
 RETRY_WAIT = 1      # wait 1 seconds between retries
