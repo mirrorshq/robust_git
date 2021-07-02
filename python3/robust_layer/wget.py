@@ -38,7 +38,7 @@ def additional_param(source_continuable=SOURCE_CONTINUABLE):
     if source_continuable == SOURCE_CONTINUABLE:
         return ["-t", "0", "-w", str(RETRY_WAIT), "--random-wait", "-T", str(TIMEOUT)]
     elif source_continuable == SOURCE_NOT_CONTINUABLE:
-        # we don't modify "--read-timeout" here so that the current connection is not aborted so early
+        # we don't modify "--read-timeout" here so that the connection is kept as long as possible
         return ["-t", "0", "-w", str(RETRY_WAIT), "--random-wait", "--dns-timeout=%d" % (TIMEOUT), "--connect-timeout=%d" % (TIMEOUT)]
     else:
         assert False

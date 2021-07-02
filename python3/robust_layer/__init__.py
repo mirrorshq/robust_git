@@ -35,5 +35,9 @@ __author__ = "fpemud@sina.com (Fpemud)"
 __version__ = "0.0.1"
 
 
-TIMEOUT = 10        # general timeout is 10 seconds
-RETRY_WAIT = 1      # wait 1 seconds between retries
+# general timeout
+# for not-continuable operation, operation itself should have separate timeout so that the connection is kept as long as possible
+TIMEOUT = 10
+
+# wait 1 seconds between retries
+RETRY_WAIT = 1
