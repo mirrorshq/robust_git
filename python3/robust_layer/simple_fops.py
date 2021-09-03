@@ -27,6 +27,14 @@ import os
 import shutil
 
 
+def mkdir(path):
+    if os.path.lexists(path):
+        if os.path.isdir(path):
+            return
+        rm(path)
+    os.mkdir(path)
+
+
 def mv(src, dst):
     if os.path.isdir(dst):          # shutil.move() won't overwrite directory, so we delete it first
         if os.path.islink(dst):
@@ -34,6 +42,12 @@ def mv(src, dst):
         else:
             shutil.rmtree(dst)
     shutil.move(src, dst)
+
+
+def mv_to_dir(src, dst_dir):
+    assert os.path.isdir(dst_dir)
+    dst = os.path.join(dst_dir, os.path.basename(src))
+    mv(src, dst)
 
 
 def ln(target, link_path):
@@ -50,7 +64,7 @@ def rm(path):
         os.remove(path)
     elif os.path.isdir(path):
         shutil.rmtree(path)
-    elif os.path.exists(path):
+    elif os.path.lexists(path):
         # other type of file, such as device node
         os.remove(path)
     else:
