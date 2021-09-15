@@ -37,6 +37,11 @@ def mkdir(path):
 
 def mk_empty_dir(path):
     mkdir(path)
+    truncate_dir(path)
+
+
+def truncate_dir(path):
+    assert os.path.isdir(path)
     for fn in os.listdir(path):
         rm(os.path.join(path, fn))
 
@@ -57,7 +62,7 @@ def mv_to_dir(src, dst_dir):
 
 
 def ln(target, link_path):
-    if os.path.islink(link_path) and os.readlink(link_path) == target:
+    if os.path.islink(link_path) and os.readlink(link_path) == target:      # already exist
         return
     rm(link_path)                   # os.symlink won't overwrite anything, so we delete it first
     os.symlink(target, link_path)
@@ -71,8 +76,6 @@ def rm(path):
     elif os.path.isdir(path):
         shutil.rmtree(path)
     elif os.path.lexists(path):
-        # other type of file, such as device node
-        os.remove(path)
+        os.remove(path)             # other type of file, such as device node
     else:
-        # path does not exist, do nothing
-        pass
+        pass                        # path does not exist, do nothing
