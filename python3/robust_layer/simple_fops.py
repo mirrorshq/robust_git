@@ -35,6 +35,16 @@ def mkdir(path):
     os.mkdir(path)
 
 
+def mk_empty_dir(path):
+    if os.path.lexists(path):
+        if os.path.isdir(path):
+            for fn in os.listdir(path):
+                rm(os.path.join(path, fn))
+            return
+        rm(path)
+    os.mkdir(path)
+
+
 def mv(src, dst):
     if os.path.isdir(dst):          # shutil.move() won't overwrite directory, so we delete it first
         if os.path.islink(dst):
