@@ -36,13 +36,9 @@ def mkdir(path):
 
 
 def mk_empty_dir(path):
-    if os.path.lexists(path):
-        if os.path.isdir(path):
-            for fn in os.listdir(path):
-                rm(os.path.join(path, fn))
-            return
-        rm(path)
-    os.mkdir(path)
+    mkdir(path)
+    for fn in os.listdir(path):
+        rm(os.path.join(path, fn))
 
 
 def mv(src, dst):
