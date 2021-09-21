@@ -26,13 +26,20 @@
 import os
 import sys
 import time
+import glob
 import subprocess
 from . import RETRY_WAIT
 from ._util import Util, ProcessStuckError
+from .simple_fops import rm as simple_fops_rm
 from .git import additional_environ, _checkPrivateDomainNotExist
 
 
 def clean(dest_directory):
+    for fullfn in glob.glob(os.path.join(dest_directory, ".git", "**", "*.lock"), recursive=True):
+        # FIXME:
+        # should detect if this lock file is currently occupied by a git process?
+        # git simply creates a plain file, or creates a real lock file?
+        simple_fops_rm(fullfn)
     Util.cmdCall("/usr/bin/git", "-C", dest_directory, "reset", "--hard")  # revert any modifications
     Util.cmdCall("/usr/bin/git", "-C", dest_directory, "clean", "-xfd")    # delete untracked files
 
